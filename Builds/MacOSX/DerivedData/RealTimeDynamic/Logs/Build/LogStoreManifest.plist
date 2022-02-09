@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>10</integer>
+	<key>logs</key>
+	<dict>
+		<key>73AC6B04-8A10-439B-88B5-FDEA7BDB7FAC</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>73AC6B04-8A10-439B-88B5-FDEA7BDB7FAC.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>RealTimeDynamic project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>RealTimeDynamic - App</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>timeStartedRecording</key>
+			<real>665943267.31885898</real>
+			<key>timeStoppedRecording</key>
+			<real>665943271.40811801</real>
+			<key>title</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>uniqueIdentifier</key>
+			<string>73AC6B04-8A10-439B-88B5-FDEA7BDB7FAC</string>
+		</dict>
+		<key>B9A4917A-57B2-4431-BB1B-78D17296F533</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>B9A4917A-57B2-4431-BB1B-78D17296F533.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>RealTimeDynamic project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>RealTimeDynamic - App</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>timeStartedRecording</key>
+			<real>665943235.08608699</real>
+			<key>timeStoppedRecording</key>
+			<real>665943239.71257401</real>
+			<key>title</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>uniqueIdentifier</key>
+			<string>B9A4917A-57B2-4431-BB1B-78D17296F533</string>
+		</dict>
+		<key>C89CEA2C-8BEC-4B09-BEFF-74004AA981E9</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>C89CEA2C-8BEC-4B09-BEFF-74004AA981E9.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>RealTimeDynamic project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>RealTimeDynamic - App</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>timeStartedRecording</key>
+			<real>665943211.73330104</real>
+			<key>timeStoppedRecording</key>
+			<real>665943215.80506396</real>
+			<key>title</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>uniqueIdentifier</key>
+			<string>C89CEA2C-8BEC-4B09-BEFF-74004AA981E9</string>
+		</dict>
+		<key>DDE65E77-A95E-4256-A10C-A48BF161C979</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>DDE65E77-A95E-4256-A10C-A48BF161C979.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>W</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>RealTimeDynamic project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>RealTimeDynamic - App</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>timeStartedRecording</key>
+			<real>665943284.88270605</real>
+			<key>timeStoppedRecording</key>
+			<real>665943309.29263902</real>
+			<key>title</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>uniqueIdentifier</key>
+			<string>DDE65E77-A95E-4256-A10C-A48BF161C979</string>
+		</dict>
+		<key>ED2525D0-7AA5-480C-A986-40A53A77AC2E</key>
+		<dict>
+			<key>className</key>
+			<string>IDEActivityLogSection</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>ED2525D0-7AA5-480C-A986-40A53A77AC2E.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>RealTimeDynamic project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>RealTimeDynamic - App</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>timeStartedRecording</key>
+			<real>665943368.83051705</real>
+			<key>timeStoppedRecording</key>
+			<real>665943370.82268906</real>
+			<key>title</key>
+			<string>Build RealTimeDynamic - App</string>
+			<key>uniqueIdentifier</key>
+			<string>ED2525D0-7AA5-480C-A986-40A53A77AC2E</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
