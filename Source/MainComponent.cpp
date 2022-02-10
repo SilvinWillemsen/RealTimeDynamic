@@ -36,7 +36,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // parameters you'll use to initialise more than one other parameter should be defined here
     double r = 0.0005;
     
-    parameters.set ("L", 1);
+    parameters.set ("L", 2);
     parameters.set ("rho", 7850);
     parameters.set ("A", r * r * double_Pi);
     parameters.set ("T", 299.75);
@@ -60,6 +60,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
     startTimerHz (15); // start the timer (15 Hz is a nice tradeoff between CPU usage and update speed)
     
+    dynamicStiffString->refreshParameter (0, 1);
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -83,12 +84,13 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     audioMutex.lock();
     for (int i = 0; i < bufferToFill.numSamples; ++i)
     {
-        dynamicStiffString->calculateScheme();
         if (parameterChangedFlag)
         {
             dynamicStiffString->refreshParameter(controlPanel->getChangedParameterIdx(), controlPanel->getChangedParameterValue());
             parameterChangedFlag = false;
         }
+        dynamicStiffString->refreshCoefficients(); // for every loop for now
+        dynamicStiffString->calculateScheme();
         dynamicStiffString->updateStates();
         
         output = dynamicStiffString->getOutput (0.8); // get output at 0.8L of the string

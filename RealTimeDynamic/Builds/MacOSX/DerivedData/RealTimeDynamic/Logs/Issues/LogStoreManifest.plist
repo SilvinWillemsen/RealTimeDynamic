@@ -6,7 +6,7 @@
 	<integer>10</integer>
 	<key>logs</key>
 	<dict>
-		<key>12ABE81C-E3A7-4BF4-801D-AF2FAC2F348B</key>
+		<key>BADEAF6F-3865-4E90-A073-956CD72FEC0F</key>
 		<dict>
 			<key>className</key>
 			<string>IDEActivityLogMajorGroupSection</string>
@@ -15,7 +15,7 @@
 			<key>domainType</key>
 			<string>Xcode.IDEActivityLogDomainType.target.product-type.application</string>
 			<key>fileName</key>
-			<string>12ABE81C-E3A7-4BF4-801D-AF2FAC2F348B.xcactivitylog</string>
+			<string>BADEAF6F-3865-4E90-A073-956CD72FEC0F.xcactivitylog</string>
 			<key>hasPrimaryLog</key>
 			<true/>
 			<key>primaryObservable</key>
@@ -26,13 +26,13 @@
 			<key>signature</key>
 			<string>RealTimeDynamic_-_App-gmlbsnephnssyzetnjzzjpuqjlnm</string>
 			<key>timeStartedRecording</key>
-			<real>666091886.18943596</real>
+			<real>666172998.64002502</real>
 			<key>timeStoppedRecording</key>
-			<real>666091889.61127806</real>
+			<real>666173002.24654901</real>
 			<key>title</key>
 			<string>Build target RealTimeDynamic - App</string>
 			<key>uniqueIdentifier</key>
-			<string>12ABE81C-E3A7-4BF4-801D-AF2FAC2F348B</string>
+			<string>BADEAF6F-3865-4E90-A073-956CD72FEC0F</string>
 		</dict>
 	</dict>
 	<key>preserveOldLogs</key>

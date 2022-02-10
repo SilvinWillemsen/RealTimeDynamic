@@ -34,16 +34,15 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     parameterPtrs.push_back (&I);
     parameterPtrs.push_back (&sigma0);
     parameterPtrs.push_back (&sigma1);
-
+    
+    parametersToGoTo.resize (parameterPtrs.size(), 0);
+    for (int i = 0; i < parameterPtrs.size(); ++i)
+        parametersToGoTo[i] = *parameterPtrs[i];
+    
     double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * A);
     
-    // Calculate stiffness coefficient (squared)
-    double kappaSqMin = 0.5 * E * 0.5 * I / (2.0 * rho * 2.0 * A);
-
-    double stabilityTerm = cSqMin * k * k + 4.0 * 0.5 * sigma1 * k; // just easier to write down below
-    
-    h = sqrt (0.5 * (stabilityTerm + sqrt ((stabilityTerm * stabilityTerm) + 16.0 * kappaSqMin * k * k)));
-    int Nmax = floor (2.0 * L / h);
+    double hMin = sqrt(cSqMin) * k;
+    int Nmax = floor (2.0 * L / hMin);
     
     // only add to left system (v)
     int MvMax = Nmax - numFromRightBound;
@@ -74,12 +73,22 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
         v[i] = &vStates[i][0];
         w[i] = &wStates[i][0];
     }
+    customIp.resize(4, 0);
+    
     refreshCoefficients();
+    
+    Nprev = N;
+    NfracPrev = Nfrac;
+    
+    uSave.open("uSaveDynamic.csv");
+    MvSave.open("MvSave.csv");
+    alfSave.open("alfSave.csv");
+    excite();
+    
 }
 
 DynamicStiffString::~DynamicStiffString()
 {
-    
 }
 
 void DynamicStiffString::paint (juce::Graphics& g)
@@ -181,6 +190,13 @@ void DynamicStiffString::calculateScheme()
         + S1 * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1])
         - S1 * (-Iterm * v[2][Mv-1] + v[2][Mv] + (Iterm - 2.0) * w[2][0] + w[2][1])) / (1.0 + S0);
 
+    for (int i = 0; i <= vStates[0].size(); ++i)
+        uSave << v[1][i] << ",";
+
+    uSave << w[1][0] << "," << w[1][1] << "\n;";
+    
+    
+    
     
 }
 
@@ -199,6 +215,16 @@ void DynamicStiffString::updateStates()
 
     
     NfracPrev = Nfrac;
+    Nprev = N;
+    
+    ++counter;
+    if (counter > 500)
+    {
+        uSave.close();
+        MvSave.close();
+        alfSave.close();
+    }
+
 }
 
 void DynamicStiffString::excite()
@@ -235,14 +261,15 @@ void DynamicStiffString::mouseDown (const MouseEvent& e)
 
 void DynamicStiffString::refreshParameter (int changedParameterIdx, double changedParameterValue)
 {
-    *parameterPtrs[changedParameterIdx] = changedParameterValue;
-    
-//    if (changedParameterIdx != 0)
-        refreshCoefficients();
+    parametersToGoTo[changedParameterIdx] = changedParameterValue;
 }
 
 void DynamicStiffString::refreshCoefficients()
 {
+    
+    for (int i = 0; i < parameterPtrs.size(); ++i)
+        *parameterPtrs[i] = 0.9999 * (*parameterPtrs[i]) + 0.0001 * parametersToGoTo[i];
+    
     // Calculate wave speed (squared)
     cSq = T / (rho * A);
     
@@ -255,17 +282,24 @@ void DynamicStiffString::refreshCoefficients()
     Nfrac = L / h;
     
     // check if the change does not surpass a limit
-    
     N = floor (Nfrac);
     alf = Nfrac - N;
+    if (Nprev == 0)
+        Nprev = N;
+    
+    // Check whether a grid point needs to be added or removed
+    if (Nprev != N)
+        addRemovePoint();
     
     Mv = N - numFromRightBound;
-    
-    Iterm = (alf-1.0) / (alf+1.0);
+    MvSave << Mv << ";\n";
+    alfSave << alf << ";\n";
+
+    Iterm = (alf - 1.0) / (alf + 1.0);
     
     lambdaSq = cSq * k * k / (h * h);
     muSq = kappaSq * k * k / (h * h * h * h);
-    std::cout << lambdaSq + 4.0 * muSq + 4.0 * sigma1 * k / (h*h) << std::endl;
+//    std::cout << lambdaSq + 4.0 * muSq + 4.0 * sigma1 * k / (h*h) << std::endl;
     // Coefficients used for damping
     S0 = sigma0 * k;
     S1 = (2.0 * sigma1 * k) / (h * h);
@@ -287,4 +321,38 @@ void DynamicStiffString::refreshCoefficients()
     B2 *= Adiv;
     C0 *= Adiv;
     C1 *= Adiv;
+}
+
+void DynamicStiffString::addRemovePoint()
+{
+    jassert (abs (N-Nprev) <= 1);
+    refreshCustomIp();
+    if (N > NfracPrev)
+    {
+        // possibly unnecessary to update up[0]
+        v[0][Mv + 1] = customIp[0] * v[0][Mv-1]
+            + customIp[1] * v[0][Mv]
+            + customIp[2] * w[0][0];
+        
+        v[1][Mv + 1] = customIp[0] * v[1][Mv-1]
+            + customIp[1] * v[1][Mv]
+            + customIp[2] * w[1][0];
+
+        v[2][Mv + 1] = customIp[0] * v[2][Mv-1]
+           + customIp[1] * v[2][Mv]
+            + customIp[2] * w[2][0];
+    
+    } else {
+        v[0][Mv] = 0;
+        v[1][Mv] = 0;
+        v[2][Mv] = 0;
+    }
+}
+
+void DynamicStiffString::refreshCustomIp()
+{
+    customIp[0] = -alf * (alf + 1.0) / ((alf + 2.0) * (alf + 3.0));
+    customIp[1] = 2.0 * alf / (alf + 2.0);
+    customIp[2] = 2.0 / (alf + 2.0);
+    customIp[3] = -2.0 * alf / ((alf + 3.0) * (alf + 2.0));
 }

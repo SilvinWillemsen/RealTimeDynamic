@@ -11,7 +11,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-
+#include <fstream>
 //==============================================================================
 /*
 */
@@ -46,15 +46,18 @@ public:
     
     bool shouldExcite() { return excitationFlag; };
     
+    void addRemovePoint();
+    void refreshCustomIp();
 private:
     
     // Model parameters
     double L, rho, A, T, E, I, cSq, kappaSq, sigma0, sigma1, lambdaSq, muSq, h, k;
     
     std::vector<double*> parameterPtrs; // to easily locate parameters
-    
+    std::vector<double> parametersToGoTo; // to easily locate parameters
+
     // Number of intervals (N+1 is number of points including boundaries)
-    int N;
+    int N, Nprev = 0;
     
     // Number of intervals of subsystems
     int Mv, Mw;
@@ -87,5 +90,10 @@ private:
     
     bool clamped = true;
     int numFromRightBound = 1;
+    
+    std::vector<double> customIp;
+    
+    std::ofstream uSave, MvSave, alfSave;
+    int counter = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DynamicStiffString)
 };
