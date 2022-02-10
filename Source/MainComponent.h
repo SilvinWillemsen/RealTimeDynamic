@@ -1,6 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Global.h"
 #include "ControlPanel.h"
 #include "DynamicStiffString.h"
 
@@ -29,7 +30,7 @@ public:
 
     double limit (double val); // limiter for your ears
 
-    void timerCallback();
+    void timerCallback() override;
     
     void changeListenerCallback (ChangeBroadcaster* changeBroadcaster) override;
 private:

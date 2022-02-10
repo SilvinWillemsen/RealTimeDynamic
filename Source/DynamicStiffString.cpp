@@ -80,10 +80,12 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     Nprev = N;
     NfracPrev = Nfrac;
     
+#ifdef RECORD
     uSave.open("uSaveDynamic.csv");
     MvSave.open("MvSave.csv");
     alfSave.open("alfSave.csv");
     excite();
+#endif
     
 }
 
@@ -190,11 +192,12 @@ void DynamicStiffString::calculateScheme()
         + S1 * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1])
         - S1 * (-Iterm * v[2][Mv-1] + v[2][Mv] + (Iterm - 2.0) * w[2][0] + w[2][1])) / (1.0 + S0);
 
+#ifdef RECORD
     for (int i = 0; i <= vStates[0].size(); ++i)
         uSave << v[1][i] << ",";
 
     uSave << w[1][0] << "," << w[1][1] << "\n;";
-    
+#endif
     
     
     
@@ -213,10 +216,10 @@ void DynamicStiffString::updateStates()
     w[1] = w[0];
     w[0] = wTmp;
 
-    
     NfracPrev = Nfrac;
     Nprev = N;
     
+#ifdef RECORD
     ++counter;
     if (counter > 500)
     {
@@ -224,7 +227,7 @@ void DynamicStiffString::updateStates()
         MvSave.close();
         alfSave.close();
     }
-
+#endif
 }
 
 void DynamicStiffString::excite()
@@ -268,7 +271,7 @@ void DynamicStiffString::refreshCoefficients()
 {
     
     for (int i = 0; i < parameterPtrs.size(); ++i)
-        *parameterPtrs[i] = 0.9999 * (*parameterPtrs[i]) + 0.0001 * parametersToGoTo[i];
+        *parameterPtrs[i] = 0.999 * (*parameterPtrs[i]) + 0.001 * parametersToGoTo[i];
     
     // Calculate wave speed (squared)
     cSq = T / (rho * A);
@@ -292,9 +295,12 @@ void DynamicStiffString::refreshCoefficients()
         addRemovePoint();
     
     Mv = N - numFromRightBound;
+    
+#ifdef RECORD
     MvSave << Mv << ";\n";
     alfSave << alf << ";\n";
-
+#endif
+    
     Iterm = (alf - 1.0) / (alf + 1.0);
     
     lambdaSq = cSq * k * k / (h * h);

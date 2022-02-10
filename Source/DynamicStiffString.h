@@ -94,6 +94,10 @@ private:
     std::vector<double> customIp;
     
     std::ofstream uSave, MvSave, alfSave;
+    
+#ifdef RECORD
     int counter = 0;
+#endif
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DynamicStiffString)
 };
