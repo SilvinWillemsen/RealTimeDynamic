@@ -33,7 +33,8 @@ public:
     int getChangedParameterIdx() { return changedParameterIdx; };
 private:
     OwnedArray<Slider> sliders;
-    
+    OwnedArray<Label> labels;
+
     double changedParameterValue = -1.0;
     String changedParameterName = "";
     int changedParameterIdx = -1;

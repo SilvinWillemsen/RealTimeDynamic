@@ -18,20 +18,26 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     // Initialise member variables using the parameter set
     L = *parameters.getVarPointer ("L");
     rho = *parameters.getVarPointer ("rho");
-    A = *parameters.getVarPointer ("A");
+    r = *parameters.getVarPointer ("r");
+    A = double_Pi * r * r;
     T = *parameters.getVarPointer ("T");
     E = *parameters.getVarPointer ("E");
-    I = *parameters.getVarPointer ("I");
+    I = double_Pi * r * r * r * r * 0.25;
     sigma0 = *parameters.getVarPointer ("sigma0");
     sigma1 = *parameters.getVarPointer ("sigma1");
     
-    parameterPtrs.reserve(8);
+    origR = r;
+    origT = T;
+    origE = E;
+    origL = L;
+    origRho = rho;
+    
+    parameterPtrs.reserve (8);
     parameterPtrs.push_back (&L);
     parameterPtrs.push_back (&rho);
-    parameterPtrs.push_back (&A);
+    parameterPtrs.push_back (&r);
     parameterPtrs.push_back (&T);
     parameterPtrs.push_back (&E);
-    parameterPtrs.push_back (&I);
     parameterPtrs.push_back (&sigma0);
     parameterPtrs.push_back (&sigma1);
     
@@ -39,10 +45,12 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     for (int i = 0; i < parameterPtrs.size(); ++i)
         parametersToGoTo[i] = *parameterPtrs[i];
     
-    double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * A);
+    parameterChanged.resize (parameterPtrs.size(), false);
     
+    double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * r * 2.0 * r * double_Pi);
+
     double hMin = sqrt(cSqMin) * k;
-    int Nmax = floor (2.0 * L / hMin);
+    Nmax = floor (2.0 * L / hMin);
     
     // only add to left system (v)
     int MvMax = Nmax - numFromRightBound;
@@ -75,7 +83,7 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     }
     customIp.resize(4, 0);
     
-    refreshCoefficients();
+    refreshCoefficients (true);
     
     Nprev = N;
     NfracPrev = Nfrac;
@@ -96,17 +104,35 @@ DynamicStiffString::~DynamicStiffString()
 void DynamicStiffString::paint (juce::Graphics& g)
 {
     // clear the background
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-    
-    // choose your favourite colour
-    g.setColour(Colours::cyan);
-    
+    g.fillAll (Colours::white);
+        
     // draw the state
-    g.strokePath(visualiseState (g, 100), PathStrokeType(2.0f));
+    double length;
+    Path path = visualiseState (g, 100, length);
+    PathStrokeType pst (r / origR * 2.0);
+//    const float dashLengths[2] = {3.0, 3.0};
+
+    double val = 1.5 - (rho / origRho - 0.5);
+    
+    int numDashPattern = 6;
+    float dashPattern[numDashPattern];
+    dashPattern[0] = 10.0 - 5.0 * val;
+    dashPattern[1] = 5.0 * val;
+    dashPattern[2] = 0;
+    dashPattern[3] = 5.0 * val;
+    dashPattern[4] = 10.0 - 5.0 * val;
+    dashPattern[5] = 0;
+    
+    for (int i = 0; i < numDashPattern; ++i)
+    {
+        dashPattern[i] *= L / origL;
+    }
+    pst.createDashedStroke (path, path, &dashPattern[0], numDashPattern);
+    g.strokePath (path, pst);
 
 }
 
-Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling)
+Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, double& length)
 {
     // String-boundaries are in the vertical middle of the component
     double stringBoundaries = getHeight() / 2.0;
@@ -115,11 +141,13 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling)
     Path stringPath;
     
     // start path
-    stringPath.startNewSubPath (0, -v[1][0] * visualScaling + stringBoundaries);
     
-    double spacing = static_cast<double>(getWidth()) / Nfrac;
-    double x = spacing;
-    
+    double spacing = 0.5 * L / origL * static_cast<double>(getWidth()) / Nfrac;
+    double startX = 0.5 * static_cast<double>(getWidth()) - 0.25 * static_cast<double>(getWidth()) * L / origL;
+//    0.25 * static_cast<double>(getWidth()) - 0.5 * L / origL * static_cast<double>(getWidth());
+    double x = startX;
+    stringPath.startNewSubPath (x, -v[1][0] * visualScaling + stringBoundaries);
+    x += spacing;
     for (int l = 1; l <= Mv; ++l)
     {
         // Needs to be -u, because a positive u would visually go down
@@ -146,6 +174,40 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling)
         x += spacing;
 
     }
+    stringPath.lineTo (x, -v[1][Mw] * visualScaling + stringBoundaries);
+    length = x - startX;
+    
+    double strokeVal = r / origR * 2.0;
+    g.setColour (Colours::black);
+    AffineTransform trans;
+    double rotVal = 0.5 * (log2(T / origT) + 1.0) * double_Pi;
+
+    trans = trans.rotation (-rotVal, startX, stringBoundaries);
+    g.addTransform (trans);
+    g.drawRoundedRectangle (startX - Global::boundaryEllRad + strokeVal,
+                   stringBoundaries-Global::boundaryEllRad + strokeVal,
+                   Global::boundaryEllRad*2 - 2*strokeVal,
+                   Global::boundaryEllRad*2 - 2*strokeVal,
+                   0.25 * Global::boundaryEllRad,
+                   2.0 * strokeVal);
+    trans = trans.rotation (rotVal, startX, stringBoundaries);
+    g.addTransform (trans);
+
+    trans = trans.rotation (rotVal, getWidth() - startX, stringBoundaries);
+    g.addTransform (trans);
+
+    g.drawRoundedRectangle (getWidth() - startX - Global::boundaryEllRad + strokeVal,
+                   stringBoundaries-Global::boundaryEllRad + strokeVal,
+                   Global::boundaryEllRad*2 - 2*strokeVal,
+                   Global::boundaryEllRad*2 - 2*strokeVal,
+                   0.25 * Global::boundaryEllRad,
+                   2.0 * strokeVal);
+    trans = trans.rotation (-rotVal, getWidth() - startX, stringBoundaries);
+    g.addTransform (trans);
+
+    double val = log2 (E / origE) * 127;
+    // choose your favourite colour
+    g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit ( - abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
 
     return stringPath;
 }
@@ -265,14 +327,151 @@ void DynamicStiffString::mouseDown (const MouseEvent& e)
 void DynamicStiffString::refreshParameter (int changedParameterIdx, double changedParameterValue)
 {
     parametersToGoTo[changedParameterIdx] = changedParameterValue;
+    parameterChanged[changedParameterIdx] = true;
 }
 
-void DynamicStiffString::refreshCoefficients()
+void DynamicStiffString::refreshCoefficients (bool init)
 {
-    
+    double NmaxChange = 1.0 / 10.0;
+    double paramDiffMax;
+    double NfracNext;
+    double sqrtTerm;
+    bool needsRefresh = false;
     for (int i = 0; i < parameterPtrs.size(); ++i)
-        *parameterPtrs[i] = 0.999 * (*parameterPtrs[i]) + 0.001 * parametersToGoTo[i];
+    {
+        // if parameter hasn't changed, continue to next
+        if (!parameterChanged[i])
+            continue;
+        
+        needsRefresh = true;
+        
+        if (&L == parameterPtrs[i])
+            paramDiffMax = NmaxChange * h;
+        else if (&rho == parameterPtrs[i])
+        {
+            // bigger rho means bigger N
+            NfracNext = Nfrac + (*parameterPtrs[i] > parametersToGoTo[i] ? -1 : 1) * NmaxChange;
+
+            paramDiffMax = abs((k * k * L * L * NfracNext * NfracNext * T + 4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext * E) / (A * L * L * (L * L - 4.0 * k * NfracNext * NfracNext * sigma1)) - rho);
+//            paramDiffMax = T * NmaxChangeInv * NmaxChangeInv * k * k / (L * L * A);
+//            std::cout << paramDiffMax << std::endl;
+        }
+        else if (&T == parameterPtrs[i])
+        {
+            // bigger T means smaller N
+            NfracNext = Nfrac + (*parameterPtrs[i] < parametersToGoTo[i] ? -1 : 1) * NmaxChange;
+                
+            paramDiffMax = abs((-4.0 * A * k * L * L * NfracNext * NfracNext * rho * sigma1 + A * L * L * L * L * rho - 4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext * E) / (k * k * L * L * NfracNext * NfracNext) - T);
+//            paramDiffMax = T * (NmaxChange * NmaxChange * k * k / (L * L * A);
+        }
+        else if (&r == parameterPtrs[i])
+        {
+            
+            if (E != 0)
+            {
+                double NfracNextPlus = Nfrac + NmaxChange;
+                double NfracNextMin = Nfrac - NmaxChange;
+
+                
+                double bCoeffPlus = (16.0 * L * L * sigma1 * k) / (NfracNextPlus * NfracNextPlus) - (4.0 * L*L*L*L)/(NfracNextPlus * NfracNextPlus * NfracNextPlus * NfracNextPlus);
+                double bCoeffMin = (16.0 * L * L * sigma1 * k) / (NfracNextMin * NfracNextMin) - (4.0 * L*L*L*L)/(NfracNextMin * NfracNextMin * NfracNextMin * NfracNextMin);
+
+                std::vector<double> rVals (4, 0);
+                
+                // The graph of N (y-axis) vs r (x-axis) is a negative parabola. For a change in N (either positive or negative, there are 4 possible r values. Here we're trying to find the one that corresponds to the one we're trying to find.
+                
+                // r right side of parabola, increasing N
+                rVals[0] = sqrt((-bCoeffPlus + sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                // r right side of parabola, decreasing N
+                rVals[1] = sqrt((-bCoeffMin + sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                
+                // r left side of parabola, increasing N
+                rVals[2] = sqrt((-bCoeffPlus - sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                
+                // r left side of parabola, decreasing N
+                rVals[3] = sqrt((-bCoeffMin - sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                
+                double rDiff = 1;
+                double rToGoTo = parametersToGoTo[i];
+                int idxToChoose = -1;
+                for (int i = 0; i < rVals.size(); ++i)
+                {
+                    if (isnan(rVals[i]))
+                        continue;
+                    // if r is decreased, don't choose larger r values
+                    if (rToGoTo < r && rVals[i] > r)
+                        continue;
+                    
+                    // if r is increased, don't choose smaller r values
+                    if (rToGoTo > r && rVals[i] < r)
+                        continue;
+                    
+                    if (abs(rVals[i] - r) < rDiff)
+                    {
+                        rDiff = rVals[i] - r;
+                        idxToChoose = i;
+                    }
+                }
+//                std::cout << "Idx to choose = " << idxToChoose << std::endl;
+                paramDiffMax = abs (rVals[idxToChoose] - r);
+
+            }
+            else
+            {
+                // if E = 0, bigger r means bigger N
+                NfracNext = Nfrac + (*parameterPtrs[i] > parametersToGoTo[i] ? -1 : 1) * NmaxChange;
+
+                paramDiffMax = abs((k * NfracNext * sqrt(T)) / (sqrt(rho) * sqrt(double_Pi * L * L - 4.0 * double_Pi * k * NfracNext * NfracNext * sigma1)) - r);
+            }
+            
+        }
+        else if (&E == parameterPtrs[i])
+        {
+            // bigger E means smaller N
+            NfracNext = Nfrac + (*parameterPtrs[i] < parametersToGoTo[i] ? -1 : 1) * NmaxChange;
+
+            paramDiffMax = abs((-4.0 * A * k * L * L * NfracNext * NfracNext * rho * sigma1 + A * L * L * L * L * rho - k * k * L * L * NfracNext * NfracNext * T) / (4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext) - E);
+
+        }
+        else if (&sigma1 == parameterPtrs[i])
+        {
+            // bigger sigma1 means smaller N
+            NfracNext = Nfrac + (*parameterPtrs[i] < parametersToGoTo[i] ? -1 : 1) * NmaxChange;
+
+            paramDiffMax = abs((A * L * L * L * L * rho - k * k * L * L * NfracNext * NfracNext * T - 4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext * E) / (4.0 * A * k * L * L * NfracNext * NfracNext * rho) - sigma1);
+
+        }
+        else if (&sigma0 == parameterPtrs[i])
+        {
+//            *parameterPtrs[i] = parametersToGoTo[i];
+            paramDiffMax = 100;
+        }
+        //    L = (1-LfilterCoeff) * LtoGoTo + LfilterCoeff * Lpre
+            if (abs(*parameterPtrs[i] - parametersToGoTo[i]) < paramDiffMax)
+            {
+                *parameterPtrs[i] = parametersToGoTo[i];
+                parameterChanged[i] = false;
+            }
+            else if (*parameterPtrs[i] < parametersToGoTo[i])
+                *parameterPtrs[i]  += paramDiffMax;
+            else if (*parameterPtrs[i] > parametersToGoTo[i])
+                *parameterPtrs[i] -= paramDiffMax;
+//        if (parameterPtrs[i] == &r || parameterPtrs[i] == &E)
+//        {
+//            *parameterPtrs[i] = 0.9995 * (*parameterPtrs[i]) + 0.0005 * parametersToGoTo[i];
+//
+//        } else {
+//            *parameterPtrs[i] = 0.999 * (*parameterPtrs[i]) + 0.001 * parametersToGoTo[i];
+//        }
+    }
     
+    // if the parameters don't need refresh, return
+    if (!needsRefresh && !init)
+        return;
+    
+    A = double_Pi * r * r;
+    I = double_Pi * r * r * r * r * 0.25;
+
     // Calculate wave speed (squared)
     cSq = T / (rho * A);
     
@@ -283,7 +482,7 @@ void DynamicStiffString::refreshCoefficients()
     
     h =  sqrt (0.5 * (stabilityTerm + sqrt ((stabilityTerm * stabilityTerm) + 16.0 * kappaSq * k * k)));
     Nfrac = L / h;
-    
+//    std::cout << Nfrac - NfracPrev << std::endl;
     // check if the change does not surpass a limit
     N = floor (Nfrac);
     alf = Nfrac - N;
@@ -345,7 +544,7 @@ void DynamicStiffString::addRemovePoint()
             + customIp[2] * w[1][0];
 
         v[2][Mv + 1] = customIp[0] * v[2][Mv-1]
-           + customIp[1] * v[2][Mv]
+            + customIp[1] * v[2][Mv]
             + customIp[2] * w[2][0];
     
     } else {

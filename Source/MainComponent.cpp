@@ -38,10 +38,9 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     
     parameters.set ("L", 1);
     parameters.set ("rho", 7850);
-    parameters.set ("A", r * r * double_Pi);
+    parameters.set ("r", 0.0005);
     parameters.set ("T", 299.75);
     parameters.set ("E", 2e11);
-    parameters.set ("I", r * r * r * r * double_Pi * 0.25);
     parameters.set ("sigma0", 2);
     parameters.set ("sigma1", 0.005);
     
@@ -95,7 +94,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         
         output = dynamicStiffString->getOutput (0.8); // get output at 0.8L of the string
         for (int channel = 0; channel < numChannels; ++channel)
-            curChannel[channel][0][i] = limit(output);
+            curChannel[channel][0][i] = Global::limit (output, -1.0, 1.0);
     }
     
     audioMutex.unlock();
@@ -121,7 +120,7 @@ void MainComponent::resized()
     Rectangle<int> totalArea = getLocalBounds();
     
     if (controlPanel != nullptr)
-        controlPanel->setBounds (totalArea.removeFromRight (100));
+        controlPanel->setBounds (totalArea.removeFromBottom (100));
     
     // put the string in the application
     if (dynamicStiffString != nullptr)
@@ -129,23 +128,6 @@ void MainComponent::resized()
     
         
 }
-
-// limiter
-double MainComponent::limit (double val)
-{
-    if (val < -1)
-    {
-        val = -1;
-        return val;
-    }
-    else if (val > 1)
-    {
-        val = 1;
-        return val;
-    }
-    return val;
-}
-
 
 void MainComponent::timerCallback()
 {

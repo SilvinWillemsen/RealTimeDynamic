@@ -28,8 +28,6 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
 
-    double limit (double val); // limiter for your ears
-
     void timerCallback() override;
     
     void changeListenerCallback (ChangeBroadcaster* changeBroadcaster) override;

@@ -12,6 +12,7 @@
 
 #include <JuceHeader.h>
 #include <fstream>
+#include "Global.h"
 //==============================================================================
 /*
 */
@@ -25,14 +26,14 @@ public:
     void resized() override;
     
     // function to draw the state of the string
-    Path visualiseState (Graphics& g, double visualScaling);
+    Path visualiseState (Graphics& g, double visualScaling, double& length);
 
     void calculateScheme();
     void updateStates();
     
     void refreshParameter (int changedParameterIdx, double changedParameterValue);
     
-    void refreshCoefficients();
+    void refreshCoefficients (bool init = false);
     
     //return u at the current sample at a location given by the length ratio
 
@@ -51,13 +52,14 @@ public:
 private:
     
     // Model parameters
-    double L, rho, A, T, E, I, cSq, kappaSq, sigma0, sigma1, lambdaSq, muSq, h, k;
-    
+    double L, rho, r, A, T, E, I, cSq, kappaSq, sigma0, sigma1, lambdaSq, muSq, h, k;
+    double origR, origL, origE, origT, origRho;
     std::vector<double*> parameterPtrs; // to easily locate parameters
-    std::vector<double> parametersToGoTo; // to easily locate parameters
+    std::vector<double> parametersToGoTo;
+    std::vector<bool> parameterChanged;
 
     // Number of intervals (N+1 is number of points including boundaries)
-    int N, Nprev = 0;
+    int N, Nmax, Nprev = 0;
     
     // Number of intervals of subsystems
     int Mv, Mw;

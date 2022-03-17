@@ -41,18 +41,31 @@ void ControlPanel::resized()
     // This method is where you should set the bounds of any child
     // components that your component contains..
     Rectangle<int> controlArea = getLocalBounds();
-    int sliderHeight = getHeight() / sliders.size();
-    for (auto s : sliders)
-        s->setBounds(controlArea.removeFromTop(sliderHeight));
+    int sliderWidth = getWidth() / sliders.size();
+    for (int i = 0; i < sliders.size(); ++i)
+    {
+        Rectangle<int> paramArea = controlArea.removeFromLeft (sliderWidth);
+        labels[i]->setBounds (paramArea.removeFromTop (paramArea.getHeight()*0.5));
+        sliders[i]->setBounds (paramArea);
+    }
 }
 
 void ControlPanel::refreshSliders (NamedValueSet& parameters)
 {
     sliders.clearQuick (true);
+    labels.clearQuick (true);
     for (int i = 0; i < parameters.size(); ++i)
     {
-        sliders.add (new Slider (Slider::LinearHorizontal, Slider::TextBoxAbove));
+        sliders.add (new Slider (Slider::LinearHorizontal, Slider::TextBoxBelow));
         Slider* newSlider = sliders[sliders.size()-1];
+        
+        labels.add (new Label (parameters.getName(i).toString(), parameters.getName(i).toString()));
+        Label* newLabel = labels[labels.size()-1];
+        newLabel->setColour(Label::textColourId, Colours::white);
+        Font font (18.0f);
+        newLabel->setJustificationType (Justification::centred);
+        newLabel->setFont (font);
+        addAndMakeVisible (newLabel);
         
         const String sliderName = parameters.getName(i).getCharPointer();
         newSlider->setName (sliderName);
@@ -67,7 +80,7 @@ void ControlPanel::refreshSliders (NamedValueSet& parameters)
                 newSlider->setRange (0, val * 2.0);
             else
                 newSlider->setRange (val * 0.5, val * 2.0);
-
+            
             newSlider->setValue (val);
             newSlider->setSkewFactorFromMidPoint (val);
         }

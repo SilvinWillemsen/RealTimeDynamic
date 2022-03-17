@@ -13,5 +13,22 @@
 namespace Global {
 #ifdef RECORD
     static int samplesToRecord = 500;
+
 #endif
+    static float boundaryEllRad = 10.0;
+    // limiter
+    static double limit (double val, double min, double max)
+    {
+        if (val < min)
+        {
+            val = min;
+            return val;
+        }
+        else if (val > max)
+        {
+            val = max;
+            return val;
+        }
+        return val;
+    }
 }
