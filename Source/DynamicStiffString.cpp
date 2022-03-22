@@ -93,7 +93,7 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     MvSave.open("MvSave.csv");
     MwSave.open("MwSave.csv");
     alfSave.open("alfSave.csv");
-    parametersToGoTo[0] = 2;
+    parametersToGoTo[0] = 1;
     parameterChanged[0] = true;
 
     excite(54);
@@ -267,20 +267,10 @@ void DynamicStiffString::calculateScheme()
                 + (-1.0 + S0) * w[2][0]
                 + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0])
                 - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0])) / (1.0 + S0);
-    } else if (numFromRightBound == 2)
-    {
-        // next-to-boundary point
-        v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
-                            + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                            - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0] + A3 * w[1][1])
-                            + S0 * v[2][Mv-1]
-                            + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                            - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
-
     }
     else
     {
-        // next-to-boundary point
+        // next-to-boundary point (left)
         v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
                             + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
                             - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0] + A3 * w[1][1])
@@ -288,7 +278,7 @@ void DynamicStiffString::calculateScheme()
                             + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
                             - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
         
-        // boundary points
+        // left inner boundary
         v[0][Mv] = (2.0 * v[1][Mv]
                             + lambdaSq * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
                             - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + A1 * w[1][0] + A2 * w[1][1] + A3 * w[1][2])
@@ -296,7 +286,7 @@ void DynamicStiffString::calculateScheme()
                             + S1 * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
                             - S1 * (v[2][Mv - 1] + AA * v[2][Mv] + w[2][0] + A3 * w[2][1])) / (1.0 + S0);
 
-        // right system (single point now)
+        // right inner boundary
         w[0][0] = (2.0 * w[1][0]
                 + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
                 - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
@@ -305,22 +295,36 @@ void DynamicStiffString::calculateScheme()
                 + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
                 - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0] + w[2][1])) / (1.0 + S0);
         
-        w[0][1] = (2.0 * w[1][1]
-                + lambdaSq * (w[1][0] - 2.0 * w[1][1] + w[1][2])
-                   - muSq * (A3 * v[1][Mv-1] + v[1][Mv] + A1 * w[1][0] + 6.0 * w[1][1] - 4.0 * w[1][2] + w[1][3])
-                + (-1.0 + S0) * w[2][1]
-                + S1 * (w[1][0] - 2.0 * w[1][1] + w[1][2])
-                - S1 * (w[2][0] - 2.0 * w[2][1] + w[2][2])) / (1.0 + S0);
-        
-        // main right scheme
-        for (int l = 2; l < Mw-1; ++l)
-            w[0][l] = B0 * w[1][l] + B1 * (w[1][l + 1] + w[1][l - 1]) + B2 * (w[1][l + 2] + w[1][l - 2])
-                    + C0 * w[2][l] + C1 * (w[2][l + 1] + w[2][l - 1]);
-
-//        // simply supported left boundary
-        w[0][Mw-1] = Bss * w[1][Mw-1] + B1 * (w[1][Mw-2] + w[1][Mw]) + B2 * w[1][Mw-3]
+        if (numFromRightBound == 2)
+        {
+            // next-to-boundary point (right) + simply supported
+            w[0][1] = (2.0 * w[1][1]
+                    + lambdaSq * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                       - muSq * (A3 * v[1][Mv-1] + v[1][Mv] + A1 * w[1][0] + 5.0 * w[1][1] - 4.0 * w[1][2])
+                    + (-1.0 + S0) * w[2][1]
+                    + S1 * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                    - S1 * (w[2][0] - 2.0 * w[2][1] + w[2][2])) / (1.0 + S0);
+        }
+        else
+        {
+            // next-to-boundary point (right)
+            w[0][1] = (2.0 * w[1][1]
+                    + lambdaSq * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                       - muSq * (A3 * v[1][Mv-1] + v[1][Mv] + A1 * w[1][0] + 6.0 * w[1][1] - 4.0 * w[1][2] + w[1][3])
+                    + (-1.0 + S0) * w[2][1]
+                    + S1 * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                    - S1 * (w[2][0] - 2.0 * w[2][1] + w[2][2])) / (1.0 + S0);
+            
+            // main right scheme
+            for (int l = 2; l < Mw-1; ++l)
+                w[0][l] = B0 * w[1][l] + B1 * (w[1][l + 1] + w[1][l - 1]) + B2 * (w[1][l + 2] + w[1][l - 2])
+                        + C0 * w[2][l] + C1 * (w[2][l + 1] + w[2][l - 1]);
+            
+            // simply supported right boundary
+            w[0][Mw-1] = Bss * w[1][Mw-1] + B1 * (w[1][Mw-2] + w[1][Mw]) + B2 * w[1][Mw-3]
                 + C0 * w[2][Mw-1] + C1 * (w[2][Mw-2] + w[2][Mw]);
 
+        }
     }
 #ifdef RECORD
     for (int i = 0; i <= vStates[0].size(); ++i)
