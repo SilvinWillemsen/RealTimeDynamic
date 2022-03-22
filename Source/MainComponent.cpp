@@ -83,16 +83,18 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     audioMutex.lock();
     for (int i = 0; i < bufferToFill.numSamples; ++i)
     {
+#ifndef RECORD
         if (parameterChangedFlag)
         {
             dynamicStiffString->refreshParameter(controlPanel->getChangedParameterIdx(), controlPanel->getChangedParameterValue());
             parameterChangedFlag = false;
         }
+#endif
         dynamicStiffString->refreshCoefficients(); // for every loop for now
         dynamicStiffString->calculateScheme();
         dynamicStiffString->updateStates();
         
-        output = dynamicStiffString->getOutput (0.8); // get output at 0.8L of the string
+        output = dynamicStiffString->getOutput (0.13); // get output at 0.13L of the string
         for (int channel = 0; channel < numChannels; ++channel)
             curChannel[channel][0][i] = Global::limit (output, -1.0, 1.0);
     }

@@ -39,10 +39,10 @@ public:
 
     double getOutput (double Lratio)
     {
-        return v[1][static_cast<int> (round(N * Lratio))];
+        return  v[1][static_cast<int> (round(N * Lratio))];
     }
     
-    void excite();
+    void excite (int loc = -1);
     void mouseDown (const MouseEvent& e) override;
     
     bool shouldExcite() { return excitationFlag; };
@@ -91,11 +91,11 @@ private:
     double excitationLoc = 0.5;
     
     bool clamped = true;
-    int numFromRightBound = 1;
+    int numFromRightBound = 10;
     
     std::vector<double> customIp;
     
-    std::ofstream uSave, MvSave, alfSave;
+    std::ofstream uSave, MvSave, MwSave, alfSave;
     
 #ifdef RECORD
     int counter = 0;

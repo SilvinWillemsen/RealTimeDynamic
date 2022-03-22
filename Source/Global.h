@@ -9,7 +9,7 @@
 */
 
 #pragma once
-//#define RECORD
+#define RECORD
 namespace Global {
 #ifdef RECORD
     static int samplesToRecord = 500;

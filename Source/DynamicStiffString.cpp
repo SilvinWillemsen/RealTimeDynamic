@@ -91,8 +91,13 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
 #ifdef RECORD
     uSave.open("uSaveDynamic.csv");
     MvSave.open("MvSave.csv");
+    MwSave.open("MwSave.csv");
     alfSave.open("alfSave.csv");
-    excite();
+    parametersToGoTo[0] = 2;
+    parameterChanged[0] = true;
+
+    excite(54);
+    
 #endif
     
 }
@@ -127,7 +132,7 @@ void DynamicStiffString::paint (juce::Graphics& g)
     {
         dashPattern[i] *= L / origL;
     }
-    pst.createDashedStroke (path, path, &dashPattern[0], numDashPattern);
+//    pst.createDashedStroke (path, path, &dashPattern[0], numDashPattern);
     g.strokePath (path, pst);
 
 }
@@ -174,7 +179,7 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, doub
         x += spacing;
 
     }
-    stringPath.lineTo (x, -v[1][Mw] * visualScaling + stringBoundaries);
+    stringPath.lineTo (x, -w[1][Mw] * visualScaling + stringBoundaries);
     length = x - startX;
     
     double strokeVal = r / origR * 2.0;
@@ -229,66 +234,100 @@ void DynamicStiffString::calculateScheme()
         v[0][l] = B0 * v[1][l] + B1 * (v[1][l + 1] + v[1][l - 1]) + B2 * (v[1][l + 2] + v[1][l - 2])
                 + C0 * v[2][l] + C1 * (v[2][l + 1] + v[2][l - 1]);
     
+    // inner boundary calculations
     A0 = (Iterm - 2.0) * (Iterm - 2.0) + 2.0;
     A1 = Iterm - 4.0;
     A2 = -(Iterm * Iterm) + 4.0 * Iterm + 1.0;
     A3 = -Iterm;
     AA = Iterm - 2.0;
-    // next-to-boundary point
-    v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
-        + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-        - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + (Iterm - 4) * v[1][Mv] + w[1][0])
-        + S0 * v[2][Mv-1]
-        + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-        - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
     
-    double v0Mvm1Test = (2.0 * v[1][Mv-1] - v[2][Mv-1]
-                        + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                        - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0])
-                        + S0 * v[2][Mv-1]
-                        + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                        - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
-    std::cout << "v0Mvm1: " << v[0][Mv-1] - v0Mvm1Test << std::endl;
-    
-    // boundary points
-    v[0][Mv] = (2.0 * v[1][Mv]
-        + lambdaSq * (w[1][0] + (Iterm - 2.0) * v[1][Mv] + v[1][Mv - 1])
-        - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + ((Iterm - 2) * (Iterm - 2) + 2) * v[1][Mv] + (2 * Iterm - 4) * w[1][0])
-        + (-1.0 + S0) * v[2][Mv]
-        + S1 * (w[1][0] + (Iterm - 2.0) * v[1][Mv] + v[1][Mv - 1])
-        - S1 * (w[2][0] + (Iterm - 2.0) * v[2][Mv] + v[2][Mv - 1])) / (1.0 + S0);
+    if (numFromRightBound == 1)
+    {
+        // next-to-boundary point
+        v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
+                            + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0])
+                            + S0 * v[2][Mv-1]
+                            + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
+        
+        // boundary points
+        v[0][Mv] = (2.0 * v[1][Mv]
+                            + lambdaSq * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
+                            - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + (A1 - A3) * w[1][0])
+                            + (-1.0 + S0) * v[2][Mv]
+                            + S1 * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
+                            - S1 * (w[2][0] + AA * v[2][Mv] + v[2][Mv - 1])) / (1.0 + S0);
 
-    double v0MvTest = (2.0 * v[1][Mv]
-                        + lambdaSq * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
-                        - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + (A1 - A3) * w[1][0])
-                        + (-1.0 + S0) * v[2][Mv]
-                        + S1 * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
-                        - S1 * (w[2][0] + AA * v[2][Mv] + v[2][Mv - 1])) / (1.0 + S0);
-    std::cout << "v0Mv: " << v[0][Mv] - v0MvTest << std::endl;
+        // right system (single point now)
+        w[0][0] = (2.0 * w[1][0]
+                + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0]) // w[1][1] is 0
+                - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
+                          + (A0 - 1.0) * w[1][0])  // w[1][1] is 0
+                + (-1.0 + S0) * w[2][0]
+                + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0])
+                - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0])) / (1.0 + S0);
+    } else if (numFromRightBound == 2)
+    {
+        // next-to-boundary point
+        v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
+                            + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0] + A3 * w[1][1])
+                            + S0 * v[2][Mv-1]
+                            + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
 
-    // right system (single point now)
-    w[0][0] = (2.0 * w[1][0]
-        + lambdaSq * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1]) // w[1][1] is 0
-        - muSq * (-Iterm * v[1][Mv-2] + (-Iterm * Iterm + 4 * Iterm + 1) * v[1][Mv-1] + (Iterm - 4) * v[1][Mv]
-                  + ((Iterm-2) * (Iterm-2) + 1) * w[1][0] - 4 * w[1][1])  // w[1][1] is 0
-        + (-1.0 + S0) * w[2][0]
-        + S1 * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1])
-        - S1 * (-Iterm * v[2][Mv-1] + v[2][Mv] + (Iterm - 2.0) * w[2][0] + w[2][1])) / (1.0 + S0);
-    
-    double w00Test = (2.0 * w[1][0]
-            + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1]) // w[1][1] is 0
-            - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
-                      + (A0 - 1.0) * w[1][0] - 4.0 * w[1][1])  // w[1][1] is 0
-            + (-1.0 + S0) * w[2][0]
-            + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
-            - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0] + w[2][1])) / (1.0 + S0);
-    std::cout << "w00: " << w[0][0] - w00Test << std::endl;
+    }
+    else
+    {
+        // next-to-boundary point
+        v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
+                            + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0] + A3 * w[1][1])
+                            + S0 * v[2][Mv-1]
+                            + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                            - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
+        
+        // boundary points
+        v[0][Mv] = (2.0 * v[1][Mv]
+                            + lambdaSq * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
+                            - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + A1 * w[1][0] + A2 * w[1][1] + A3 * w[1][2])
+                            + (-1.0 + S0) * v[2][Mv]
+                            + S1 * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
+                            - S1 * (v[2][Mv - 1] + AA * v[2][Mv] + w[2][0] + A3 * w[2][1])) / (1.0 + S0);
 
+        // right system (single point now)
+        w[0][0] = (2.0 * w[1][0]
+                + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
+                - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
+                          + A0 * w[1][0] - 4 * w[1][1] + w[1][2])
+                + (-1.0 + S0) * w[2][0]
+                + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
+                - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0] + w[2][1])) / (1.0 + S0);
+        
+        w[0][1] = (2.0 * w[1][1]
+                + lambdaSq * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                   - muSq * (A3 * v[1][Mv-1] + v[1][Mv] + A1 * w[1][0] + 6.0 * w[1][1] - 4.0 * w[1][2] + w[1][3])
+                + (-1.0 + S0) * w[2][1]
+                + S1 * (w[1][0] - 2.0 * w[1][1] + w[1][2])
+                - S1 * (w[2][0] - 2.0 * w[2][1] + w[2][2])) / (1.0 + S0);
+        
+        // main right scheme
+        for (int l = 2; l < Mw-1; ++l)
+            w[0][l] = B0 * w[1][l] + B1 * (w[1][l + 1] + w[1][l - 1]) + B2 * (w[1][l + 2] + w[1][l - 2])
+                    + C0 * w[2][l] + C1 * (w[2][l + 1] + w[2][l - 1]);
+
+//        // simply supported left boundary
+        w[0][Mw-1] = Bss * w[1][Mw-1] + B1 * (w[1][Mw-2] + w[1][Mw]) + B2 * w[1][Mw-3]
+                + C0 * w[2][Mw-1] + C1 * (w[2][Mw-2] + w[2][Mw]);
+
+    }
 #ifdef RECORD
     for (int i = 0; i <= vStates[0].size(); ++i)
         uSave << v[1][i] << ",";
-
-    uSave << w[1][0] << "," << w[1][1] << "\n;";
+    for (int i = 0; i < Mw; ++i)
+        uSave << w[1][i] << ",";
+    uSave << w[1][Mw] << "\n;";
 #endif
     
     
@@ -317,12 +356,13 @@ void DynamicStiffString::updateStates()
     {
         uSave.close();
         MvSave.close();
+        MwSave.close();
         alfSave.close();
     }
 #endif
 }
 
-void DynamicStiffString::excite()
+void DynamicStiffString::excite (int loc)
 {
     //// Arbitrary excitation function (raised cosine) ////
     
@@ -330,7 +370,7 @@ void DynamicStiffString::excite()
     double width = 10;
     
     // make sure we're not going out of bounds at the left boundary
-    int start = std::max (floor((N+1) * excitationLoc) - floor(width * 0.5), 1.0);
+    int start = (loc == -1) ? std::max (floor((N+1) * excitationLoc) - floor(width * 0.5), 1.0) : loc;
 
     for (int l = 0; l < width; ++l)
     {
@@ -496,9 +536,10 @@ void DynamicStiffString::refreshCoefficients (bool init)
     }
     
     // if the parameters don't need refresh, return
+#ifndef RECORD
     if (!needsRefresh && !init)
         return;
-    
+#endif
     A = double_Pi * r * r;
     I = double_Pi * r * r * r * r * 0.25;
 
@@ -527,6 +568,7 @@ void DynamicStiffString::refreshCoefficients (bool init)
     
 #ifdef RECORD
     MvSave << Mv << ";\n";
+    MwSave << Mw << ";\n";
     alfSave << alf << ";\n";
 #endif
     
@@ -567,16 +609,19 @@ void DynamicStiffString::addRemovePoint()
         // possibly unnecessary to update up[0]
         v[0][Mv + 1] = customIp[0] * v[0][Mv-1]
             + customIp[1] * v[0][Mv]
-            + customIp[2] * w[0][0];
+            + customIp[2] * w[0][0]
+            + customIp[3] * w[0][1];
         
         v[1][Mv + 1] = customIp[0] * v[1][Mv-1]
             + customIp[1] * v[1][Mv]
-            + customIp[2] * w[1][0];
+            + customIp[2] * w[1][0]
+            + customIp[3] * w[1][1];
 
         v[2][Mv + 1] = customIp[0] * v[2][Mv-1]
             + customIp[1] * v[2][Mv]
-            + customIp[2] * w[2][0];
-    
+            + customIp[2] * w[2][0]
+            + customIp[3] * w[2][1];
+
     } else {
         v[0][Mv] = 0;
         v[1][Mv] = 0;
