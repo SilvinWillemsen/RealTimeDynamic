@@ -229,6 +229,11 @@ void DynamicStiffString::calculateScheme()
         v[0][l] = B0 * v[1][l] + B1 * (v[1][l + 1] + v[1][l - 1]) + B2 * (v[1][l + 2] + v[1][l - 2])
                 + C0 * v[2][l] + C1 * (v[2][l + 1] + v[2][l - 1]);
     
+    A0 = (Iterm - 2.0) * (Iterm - 2.0) + 2.0;
+    A1 = Iterm - 4.0;
+    A2 = -(Iterm * Iterm) + 4.0 * Iterm + 1.0;
+    A3 = -Iterm;
+    AA = Iterm - 2.0;
     // next-to-boundary point
     v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
         + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
@@ -236,6 +241,14 @@ void DynamicStiffString::calculateScheme()
         + S0 * v[2][Mv-1]
         + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
         - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
+    
+    double v0Mvm1Test = (2.0 * v[1][Mv-1] - v[2][Mv-1]
+                        + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                        - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0])
+                        + S0 * v[2][Mv-1]
+                        + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
+                        - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
+    std::cout << "v0Mvm1: " << v[0][Mv-1] - v0Mvm1Test << std::endl;
     
     // boundary points
     v[0][Mv] = (2.0 * v[1][Mv]
@@ -245,6 +258,14 @@ void DynamicStiffString::calculateScheme()
         + S1 * (w[1][0] + (Iterm - 2.0) * v[1][Mv] + v[1][Mv - 1])
         - S1 * (w[2][0] + (Iterm - 2.0) * v[2][Mv] + v[2][Mv - 1])) / (1.0 + S0);
 
+    double v0MvTest = (2.0 * v[1][Mv]
+                        + lambdaSq * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
+                        - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + (A1 - A3) * w[1][0])
+                        + (-1.0 + S0) * v[2][Mv]
+                        + S1 * (w[1][0] + AA * v[1][Mv] + v[1][Mv - 1])
+                        - S1 * (w[2][0] + AA * v[2][Mv] + v[2][Mv - 1])) / (1.0 + S0);
+    std::cout << "v0Mv: " << v[0][Mv] - v0MvTest << std::endl;
+
     // right system (single point now)
     w[0][0] = (2.0 * w[1][0]
         + lambdaSq * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1]) // w[1][1] is 0
@@ -253,6 +274,15 @@ void DynamicStiffString::calculateScheme()
         + (-1.0 + S0) * w[2][0]
         + S1 * (-Iterm * v[1][Mv-1] + v[1][Mv] + (Iterm - 2.0) * w[1][0] + w[1][1])
         - S1 * (-Iterm * v[2][Mv-1] + v[2][Mv] + (Iterm - 2.0) * w[2][0] + w[2][1])) / (1.0 + S0);
+    
+    double w00Test = (2.0 * w[1][0]
+            + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1]) // w[1][1] is 0
+            - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
+                      + (A0 - 1.0) * w[1][0] - 4.0 * w[1][1])  // w[1][1] is 0
+            + (-1.0 + S0) * w[2][0]
+            + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
+            - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0] + w[2][1])) / (1.0 + S0);
+    std::cout << "w00: " << w[0][0] - w00Test << std::endl;
 
 #ifdef RECORD
     for (int i = 0; i <= vStates[0].size(); ++i)

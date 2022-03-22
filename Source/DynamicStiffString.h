@@ -66,7 +66,7 @@ private:
     
     // Fractional number of intervals used for dynaic grid
     double Nfrac, NfracPrev;
-    double alf, Iterm;
+    double alf, Iterm, A0, A1, A2, A3, AA;
     
     // (N+1) x 3 'matrices' containing the state of the left and right system at all time-steps
     std::vector<std::vector<double>> vStates;
