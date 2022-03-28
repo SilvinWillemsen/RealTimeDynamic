@@ -40,12 +40,12 @@ void ControlPanel::resized()
 {
     // This method is where you should set the bounds of any child
     // components that your component contains..
-    Rectangle<int> controlArea = getLocalBounds();
+    Rectangle<int> controlArea = getLocalBounds().reduced (Global::margin);
     int sliderWidth = getWidth() / sliders.size();
     for (int i = 0; i < sliders.size(); ++i)
     {
-        Rectangle<int> paramArea = controlArea.removeFromLeft (sliderWidth);
-        labels[i]->setBounds (paramArea.removeFromTop (paramArea.getHeight()*0.5));
+        Rectangle<int> paramArea = controlArea.removeFromLeft (sliderWidth).reduced (Global::margin, 0);
+        labels[i]->setBounds (paramArea.removeFromTop (paramArea.getHeight()*0.25));
         sliders[i]->setBounds (paramArea);
     }
 }

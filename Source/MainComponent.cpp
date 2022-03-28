@@ -30,36 +30,36 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-    //// Set the paramters ///
+    // Set the paramters
     NamedValueSet parameters;
-    
-    // parameters you'll use to initialise more than one other parameter should be defined here
-    double r = 0.0005;
     
     parameters.set ("L", 1);
     parameters.set ("rho", 7850);
     parameters.set ("r", 0.0005);
-    parameters.set ("T", 299.75);
+    parameters.set ("T", 300);
     parameters.set ("E", 2e11);
     parameters.set ("sigma0", 1);
     parameters.set ("sigma1", 0.005);
     
-    //// Initialise an instance of the DynamicStiffString class ////
+    // Initialise an instance of the DynamicStiffString class
     dynamicStiffString = std::make_unique<DynamicStiffString> (parameters, 1.0 / sampleRate);
     
-    addAndMakeVisible (dynamicStiffString.get()); // add the string to the application
+    // Add the string to the application and make it visible
+    addAndMakeVisible (dynamicStiffString.get());
     
+    // Initialise the control panel and make it visible
     controlPanel = std::make_unique<ControlPanel> (this);
-    
     addAndMakeVisible (controlPanel.get());
     
+    // Initialise the sliders using the parameters above
     controlPanel->refreshSliders (parameters);
-    // Call resized again as our components need a sample rate before they can get initialised.
-    setSize (800, 600);
-
-    startTimerHz (15); // start the timer (15 Hz is a nice tradeoff between CPU usage and update speed)
     
-//     dynamicStiffString->refreshParameter (0, 1);
+    // Call resized again as our components need a sample rate before they can get initialised.
+    setSize (800, 400);
+
+    // Start the timer (15 Hz is a nice tradeoff between CPU usage and update speed)
+    startTimerHz (15);
+    
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)

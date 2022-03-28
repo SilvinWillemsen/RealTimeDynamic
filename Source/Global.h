@@ -15,6 +15,7 @@ namespace Global {
     static int samplesToRecord = 500;
 
 #endif
+    static int margin = 10;
     static double NmaxChange = 1.0 / 10.0;
     static float boundaryEllRad = 10.0;
     // limiter

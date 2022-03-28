@@ -19,10 +19,10 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     L = *parameters.getVarPointer ("L");
     rho = *parameters.getVarPointer ("rho");
     r = *parameters.getVarPointer ("r");
-    A = double_Pi * r * r;
+    A = MathConstants<double>::pi * r * r;
     T = *parameters.getVarPointer ("T");
     E = *parameters.getVarPointer ("E");
-    I = double_Pi * r * r * r * r * 0.25;
+    I = MathConstants<double>::pi * r * r * r * r * 0.25;
     sigma0 = *parameters.getVarPointer ("sigma0");
     sigma1 = *parameters.getVarPointer ("sigma1");
     
@@ -47,7 +47,7 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     
     parameterChanged.resize (parameterPtrs.size(), false);
     
-    double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * r * 2.0 * r * double_Pi);
+    double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * r * 2.0 * r * MathConstants<double>::pi);
 
     double hMin = sqrt(cSqMin) * k;
     Nmax = floor (2.0 * L / hMin);
@@ -182,11 +182,17 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, doub
     stringPath.lineTo (x, -w[1][Mw] * visualScaling + stringBoundaries);
     length = x - startX;
     
+    // Draw boundary points //
+    
     double strokeVal = r / origR * 2.0;
-    g.setColour (Colours::black);
     AffineTransform trans;
-    double rotVal = 0.5 * (log2(T / origT) + 1.0) * double_Pi;
-
+    double rotVal = 0.5 * (log2(T / origT) + 1.0) * MathConstants<double>::pi;
+    
+    // Set colour based on Young's modulus
+    double val = log2 (E / origE) * 127;
+    g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit (-abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
+    
+    // Draw left boundary
     trans = trans.rotation (-rotVal, startX, stringBoundaries);
     g.addTransform (trans);
     g.drawRoundedRectangle (startX - Global::boundaryEllRad + strokeVal,
@@ -195,24 +201,24 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, doub
                    Global::boundaryEllRad*2 - 2*strokeVal,
                    0.25 * Global::boundaryEllRad,
                    2.0 * strokeVal);
+    
+    // Revert transformation
     trans = trans.rotation (rotVal, startX, stringBoundaries);
     g.addTransform (trans);
 
+    // Draw right boundary
     trans = trans.rotation (rotVal, getWidth() - startX, stringBoundaries);
     g.addTransform (trans);
-
     g.drawRoundedRectangle (getWidth() - startX - Global::boundaryEllRad + strokeVal,
                    stringBoundaries-Global::boundaryEllRad + strokeVal,
                    Global::boundaryEllRad*2 - 2*strokeVal,
                    Global::boundaryEllRad*2 - 2*strokeVal,
                    0.25 * Global::boundaryEllRad,
                    2.0 * strokeVal);
+    
+    // Revert transformation
     trans = trans.rotation (-rotVal, getWidth() - startX, stringBoundaries);
     g.addTransform (trans);
-
-    double val = log2 (E / origE) * 127;
-    // choose your favourite colour
-    g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit (-abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
 
     return stringPath;
 }
@@ -383,8 +389,8 @@ void DynamicStiffString::excite (int loc)
         if (l+start > (clamped ? N - 2 : N - 1))
             break;
         
-        v[1][l+start] += 0.5 * (1 - cos(2.0 * double_Pi * l / (width-1.0)));
-        v[2][l+start] += 0.5 * (1 - cos(2.0 * double_Pi * l / (width-1.0)));
+        v[1][l+start] += 0.5 * (1 - cos(2.0 * MathConstants<double>::pi * l / (width-1.0)));
+        v[2][l+start] += 0.5 * (1 - cos(2.0 * MathConstants<double>::pi * l / (width-1.0)));
     }
     // Disable the excitation flag to only excite once
     excitationFlag = false;
@@ -453,15 +459,15 @@ void DynamicStiffString::refreshCoefficients (bool init)
                 // The graph of N (y-axis) vs r (x-axis) is a negative parabola. For a change in N (either positive or negative, there are 4 possible r values. Here we're trying to find the one that corresponds to the one we're trying to find.
                 
                 // r right side of parabola, increasing N
-                rVals[0] = sqrt((-bCoeffPlus + sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                rVals[0] = sqrt((-bCoeffPlus + sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * MathConstants<double>::pi)))/(8.0 * (E * k * k / rho)));
                 // r right side of parabola, decreasing N
-                rVals[1] = sqrt((-bCoeffMin + sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                rVals[1] = sqrt((-bCoeffMin + sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * MathConstants<double>::pi)))/(8.0 * (E * k * k / rho)));
                 
                 // r left side of parabola, increasing N
-                rVals[2] = sqrt((-bCoeffPlus - sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                rVals[2] = sqrt((-bCoeffPlus - sqrt(bCoeffPlus * bCoeffPlus - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextPlus * NfracNextPlus * rho * MathConstants<double>::pi)))/(8.0 * (E * k * k / rho)));
                 
                 // r left side of parabola, decreasing N
-                rVals[3] = sqrt((-bCoeffMin - sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * double_Pi)))/(8.0 * (E * k * k / rho)));
+                rVals[3] = sqrt((-bCoeffMin - sqrt(bCoeffMin * bCoeffMin - 16.0 * E * k * k / rho * (4.0 * L*L * T * k*k) / (NfracNextMin * NfracNextMin * rho * MathConstants<double>::pi)))/(8.0 * (E * k * k / rho)));
                 
                 double rDiff = 1;
                 double rToGoTo = parametersToGoTo[i];
@@ -492,7 +498,7 @@ void DynamicStiffString::refreshCoefficients (bool init)
                 // if E = 0, bigger r means bigger N
                 NfracNext = Nfrac + (*parameterPtrs[i] > parametersToGoTo[i] ? -1 : 1) * NmaxChange;
 
-                paramDiffMax = abs((k * NfracNext * sqrt(T)) / (sqrt(rho) * sqrt(double_Pi * L * L - 4.0 * double_Pi * k * NfracNext * NfracNext * sigma1)) - r);
+                paramDiffMax = abs((k * NfracNext * sqrt(T)) / (sqrt(rho) * sqrt(MathConstants<double>::pi * L * L - 4.0 * MathConstants<double>::pi * k * NfracNext * NfracNext * sigma1)) - r);
             }
             
         }
@@ -541,8 +547,8 @@ void DynamicStiffString::refreshCoefficients (bool init)
     if (!needsRefresh && !init)
         return;
 #endif
-    A = double_Pi * r * r;
-    I = double_Pi * r * r * r * r * 0.25;
+    A = MathConstants<double>::pi * r * r;
+    I = MathConstants<double>::pi * r * r * r * r * 0.25;
 
     // Calculate wave speed (squared)
     cSq = T / (rho * A);
