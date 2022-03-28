@@ -132,7 +132,7 @@ void DynamicStiffString::paint (juce::Graphics& g)
     {
         dashPattern[i] *= L / origL;
     }
-//    pst.createDashedStroke (path, path, &dashPattern[0], numDashPattern);
+    pst.createDashedStroke (path, path, &dashPattern[0], numDashPattern);
     g.strokePath (path, pst);
 
 }
@@ -212,7 +212,7 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, doub
 
     double val = log2 (E / origE) * 127;
     // choose your favourite colour
-    g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit ( - abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
+    g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit (-abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
 
     return stringPath;
 }
@@ -271,29 +271,30 @@ void DynamicStiffString::calculateScheme()
     else
     {
         // next-to-boundary point (left)
-        v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
-                            + lambdaSq * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                            - muSq * (v[1][Mv - 3] - 4 * v[1][Mv - 2] + 6 * v[1][Mv-1] + A1 * v[1][Mv] + w[1][0] + A3 * w[1][1])
-                            + S0 * v[2][Mv-1]
-                            + S1 * (v[1][Mv] - 2.0 * v[1][Mv - 1] + v[1][Mv - 2])
-                            - S1 * (v[2][Mv] - 2.0 * v[2][Mv - 1] + v[2][Mv - 2])) / (1.0 + S0);
-        
+        v[0][Mv-1] = ((2.0 - 2.0 * lambdaSq - 6.0 * muSq - 2.0 * S1) * v[1][Mv-1]
+                                + (lambdaSq + 4.0 * muSq + S1) * v[1][Mv-2]
+                                + (lambdaSq - A1 * muSq + S1) * v[1][Mv]
+                                - muSq * (v[1][Mv-3] + w[1][0] + A3 * w[1][1])
+                                + (S0 + 2.0 * S1 - 1.0) * v[2][Mv-1]
+                                - S1 * (v[2][Mv] + v[2][Mv-2])) / (1.0 + S0);
+                
         // left inner boundary
-        v[0][Mv] = (2.0 * v[1][Mv]
-                            + lambdaSq * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
-                            - muSq * (v[1][Mv - 2] - 4 * v[1][Mv - 1] + A0 * v[1][Mv] + A1 * w[1][0] + A2 * w[1][1] + A3 * w[1][2])
-                            + (-1.0 + S0) * v[2][Mv]
-                            + S1 * (v[1][Mv - 1] + AA * v[1][Mv] + w[1][0] + A3 * w[1][1])
-                            - S1 * (v[2][Mv - 1] + AA * v[2][Mv] + w[2][0] + A3 * w[2][1])) / (1.0 + S0);
-
+        v[0][Mv] = ((2.0 + AA * (lambdaSq + S1) - A0 * muSq) * v[1][Mv]
+                            + (lambdaSq + 4.0 * muSq + S1) * v[1][Mv-1]
+                            + (lambdaSq - A1 * muSq + S1) * w[1][0]
+                            + (A3 * lambdaSq - A2 * muSq + A3 * S1) * w[1][1]
+                            - muSq * (v[1][Mv-2] + A3 * w[1][2])
+                            + (S0 - AA * S1 - 1.0) * v[2][Mv]
+                            - S1 * (v[2][Mv-1] + w[2][0] + A3 * w[2][1])) / (1.0 + S0);
+                
         // right inner boundary
-        w[0][0] = (2.0 * w[1][0]
-                + lambdaSq * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
-                - muSq * (A3 * v[1][Mv-2] + A2 * v[1][Mv-1] + A1 * v[1][Mv]
-                          + A0 * w[1][0] - 4 * w[1][1] + w[1][2])
-                + (-1.0 + S0) * w[2][0]
-                + S1 * (A3 * v[1][Mv-1] + v[1][Mv] + AA * w[1][0] + w[1][1])
-                - S1 * (A3 * v[2][Mv-1] + v[2][Mv] + AA * w[2][0] + w[2][1])) / (1.0 + S0);
+        w[0][0] = ((2.0 + AA * (lambdaSq + S1) - A0 * muSq) * w[1][0]
+                            + (lambdaSq + 4.0 * muSq + S1) * w[1][1]
+                            + (lambdaSq - A1 * muSq + S1) * v[1][Mv]
+                            + (A3 * lambdaSq - A2 * muSq + A3 * S1) * v[1][Mv-1]
+                            - muSq * (w[1][2] + A3 * v[1][Mv-2])
+                            + (S0 - AA * S1 - 1.0) * w[2][0]
+                            - S1 * (w[2][1] + v[2][Mv] + A3 * v[2][Mv-1])) / (1.0 + S0);
         
         if (numFromRightBound == 2)
         {
@@ -308,13 +309,13 @@ void DynamicStiffString::calculateScheme()
         else
         {
             // next-to-boundary point (right)
-            w[0][1] = (2.0 * w[1][1]
-                    + lambdaSq * (w[1][0] - 2.0 * w[1][1] + w[1][2])
-                       - muSq * (A3 * v[1][Mv-1] + v[1][Mv] + A1 * w[1][0] + 6.0 * w[1][1] - 4.0 * w[1][2] + w[1][3])
-                    + (-1.0 + S0) * w[2][1]
-                    + S1 * (w[1][0] - 2.0 * w[1][1] + w[1][2])
-                    - S1 * (w[2][0] - 2.0 * w[2][1] + w[2][2])) / (1.0 + S0);
-            
+            w[0][1] = ((2.0 - 2.0 * lambdaSq - 6.0 * muSq - 2.0 * S1) * w[1][1]
+                                    + (lambdaSq + 4.0 * muSq + S1) * w[1][2]
+                                    + (lambdaSq - A1 * muSq + S1) * w[1][0]
+                                    - muSq * (w[1][3] + v[1][Mv] + A3 * v[1][Mv-1])
+                                    + (S0 + 2.0 * S1 - 1.0) * w[2][1]
+                                    - S1 * (w[2][0] + w[2][2])) / (1.0 + S0);
+
             // main right scheme
             for (int l = 2; l < Mw-1; ++l)
                 w[0][l] = B0 * w[1][l] + B1 * (w[1][l + 1] + w[1][l - 1]) + B2 * (w[1][l + 2] + w[1][l - 2])
@@ -406,10 +407,10 @@ void DynamicStiffString::refreshParameter (int changedParameterIdx, double chang
 
 void DynamicStiffString::refreshCoefficients (bool init)
 {
-    double NmaxChange = 1.0 / 10.0;
+    double NmaxChange = Global::NmaxChange;
     double paramDiffMax;
     double NfracNext;
-    double sqrtTerm;
+
     bool needsRefresh = false;
     for (int i = 0; i < parameterPtrs.size(); ++i)
     {
@@ -427,8 +428,6 @@ void DynamicStiffString::refreshCoefficients (bool init)
             NfracNext = Nfrac + (*parameterPtrs[i] > parametersToGoTo[i] ? -1 : 1) * NmaxChange;
 
             paramDiffMax = abs((k * k * L * L * NfracNext * NfracNext * T + 4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext * E) / (A * L * L * (L * L - 4.0 * k * NfracNext * NfracNext * sigma1)) - rho);
-//            paramDiffMax = T * NmaxChangeInv * NmaxChangeInv * k * k / (L * L * A);
-//            std::cout << paramDiffMax << std::endl;
         }
         else if (&T == parameterPtrs[i])
         {
@@ -436,7 +435,6 @@ void DynamicStiffString::refreshCoefficients (bool init)
             NfracNext = Nfrac + (*parameterPtrs[i] < parametersToGoTo[i] ? -1 : 1) * NmaxChange;
                 
             paramDiffMax = abs((-4.0 * A * k * L * L * NfracNext * NfracNext * rho * sigma1 + A * L * L * L * L * rho - 4.0 * I * k * k * NfracNext * NfracNext * NfracNext * NfracNext * E) / (k * k * L * L * NfracNext * NfracNext) - T);
-//            paramDiffMax = T * (NmaxChange * NmaxChange * k * k / (L * L * A);
         }
         else if (&r == parameterPtrs[i])
         {
@@ -486,7 +484,6 @@ void DynamicStiffString::refreshCoefficients (bool init)
                         idxToChoose = i;
                     }
                 }
-//                std::cout << "Idx to choose = " << idxToChoose << std::endl;
                 paramDiffMax = abs (rVals[idxToChoose] - r);
 
             }
@@ -557,7 +554,7 @@ void DynamicStiffString::refreshCoefficients (bool init)
     
     h =  sqrt (0.5 * (stabilityTerm + sqrt ((stabilityTerm * stabilityTerm) + 16.0 * kappaSq * k * k)));
     Nfrac = L / h;
-//    std::cout << Nfrac - NfracPrev << std::endl;
+
     // check if the change does not surpass a limit
     N = floor (Nfrac);
     alf = Nfrac - N;
@@ -580,7 +577,7 @@ void DynamicStiffString::refreshCoefficients (bool init)
     
     lambdaSq = cSq * k * k / (h * h);
     muSq = kappaSq * k * k / (h * h * h * h);
-//    std::cout << lambdaSq + 4.0 * muSq + 4.0 * sigma1 * k / (h*h) << std::endl;
+
     // Coefficients used for damping
     S0 = sigma0 * k;
     S1 = (2.0 * sigma1 * k) / (h * h);

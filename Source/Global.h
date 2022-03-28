@@ -9,12 +9,13 @@
 */
 
 #pragma once
-#define RECORD
+//#define RECORD
 namespace Global {
 #ifdef RECORD
     static int samplesToRecord = 500;
 
 #endif
+    static double NmaxChange = 1.0 / 10.0;
     static float boundaryEllRad = 10.0;
     // limiter
     static double limit (double val, double min, double max)

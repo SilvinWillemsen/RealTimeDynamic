@@ -91,7 +91,7 @@ private:
     double excitationLoc = 0.5;
     
     bool clamped = true;
-    int numFromRightBound = 2;
+    int numFromRightBound = 1;
     
     std::vector<double> customIp;
     

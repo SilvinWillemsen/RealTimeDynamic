@@ -36,12 +36,12 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // parameters you'll use to initialise more than one other parameter should be defined here
     double r = 0.0005;
     
-    parameters.set ("L", 2);
+    parameters.set ("L", 1);
     parameters.set ("rho", 7850);
     parameters.set ("r", 0.0005);
     parameters.set ("T", 299.75);
     parameters.set ("E", 2e11);
-    parameters.set ("sigma0", 2);
+    parameters.set ("sigma0", 1);
     parameters.set ("sigma1", 0.005);
     
     //// Initialise an instance of the DynamicStiffString class ////
@@ -139,9 +139,5 @@ void MainComponent::timerCallback()
 void MainComponent::changeListenerCallback (ChangeBroadcaster* changeBroadcaster)
 {
     if (changeBroadcaster == controlPanel.get())
-    {
         parameterChangedFlag = true;
-        std::cout << controlPanel->getChangedParameterName() << ": " << controlPanel->getChangedParameterValue() << std::endl;
-
-    }
 }
