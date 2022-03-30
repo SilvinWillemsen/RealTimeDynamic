@@ -12,7 +12,8 @@
 */
 class MainComponent  : public AudioAppComponent,
                        public ChangeListener,
-                       public Timer // for graphics refresh
+                       public Timer, // for graphics refresh
+                       public KeyListener
 {
 public:
     //==============================================================================
@@ -31,6 +32,8 @@ public:
     void timerCallback() override;
     
     void changeListenerCallback (ChangeBroadcaster* changeBroadcaster) override;
+    
+    bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
 private:
     //==============================================================================
     // Your private member variables go here...

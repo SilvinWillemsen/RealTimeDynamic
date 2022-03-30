@@ -16,7 +16,7 @@
 //==============================================================================
 /*
 */
-class DynamicStiffString  : public juce::Component
+class DynamicStiffString  : public juce::Component, public KeyListener
 {
 public:
     DynamicStiffString (NamedValueSet& parameters, double k);
@@ -37,9 +37,9 @@ public:
     
     //return u at the current sample at a location given by the length ratio
 
-    double getOutput (double Lratio)
+    double getOutput()
     {
-        return  v[1][static_cast<int> (round(N * Lratio))];
+        return v[1][6]; // set to be fixed due to varying N
     }
     
     void excite (int loc = -1);
@@ -49,6 +49,8 @@ public:
     
     void addRemovePoint();
     void refreshCustomIp();
+    
+    bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
 private:
     
     // Model parameters
@@ -62,7 +64,8 @@ private:
     int N, Nmax, Nprev = 0;
     
     // Number of intervals of subsystems
-    int Mv, Mw;
+    int Mv;
+    const int Mw = 1; // Mw is static
     
     // Fractional number of intervals used for dynaic grid
     double Nfrac, NfracPrev;
@@ -88,10 +91,9 @@ private:
     bool excitationFlag = false;
     
     // initialise location of excitation
-    double excitationLoc = 0.5;
+    double excitationLoc = 0.22;
     
     bool clamped = true;
-    int numFromRightBound = 1;
     
     std::vector<double> customIp;
     

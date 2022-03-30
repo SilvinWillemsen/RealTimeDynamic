@@ -16,6 +16,8 @@ MainComponent::MainComponent()
         // Specify the number of input and output channels that we want to open
         setAudioChannels (0, 2);
     }
+    
+    addKeyListener (this);
 }
 
 MainComponent::~MainComponent()
@@ -94,7 +96,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         dynamicStiffString->calculateScheme();
         dynamicStiffString->updateStates();
         
-        output = dynamicStiffString->getOutput (0.13); // get output at 0.13L of the string
+        output = dynamicStiffString->getOutput(); 
         for (int channel = 0; channel < numChannels; ++channel)
             curChannel[channel][0][i] = Global::limit (output, -1.0, 1.0);
     }
@@ -140,4 +142,10 @@ void MainComponent::changeListenerCallback (ChangeBroadcaster* changeBroadcaster
 {
     if (changeBroadcaster == controlPanel.get())
         parameterChangedFlag = true;
+}
+
+bool MainComponent::keyPressed (const KeyPress& key, Component *originatingComponent)
+{
+    dynamicStiffString->keyPressed (key, originatingComponent);
+    return true;
 }

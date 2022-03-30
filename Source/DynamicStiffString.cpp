@@ -53,15 +53,14 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     Nmax = floor (2.0 * L / hMin);
     
     // only add to left system (v)
-    int MvMax = Nmax - numFromRightBound;
+    int MvMax = Nmax - Mw;
     
-    Mw = numFromRightBound;
     // Initialise vectors (excluding outer boundaries
     vStates = std::vector<std::vector<double>> (3,
                                         std::vector<double>(MvMax+1, 0));
     
     wStates = std::vector<std::vector<double>> (3,
-                                        std::vector<double>(numFromRightBound+1, 0));
+                                        std::vector<double>(Mw+1, 0));
 
     /*  Make u pointers point to the first index of the state vectors.
         To use u (and obtain a vector from the state vectors) use indices like u[n][l] where,
@@ -189,7 +188,7 @@ Path DynamicStiffString::visualiseState (Graphics& g, double visualScaling, doub
     double rotVal = 0.5 * (log2(T / origT) + 1.0) * MathConstants<double>::pi;
     
     // Set colour based on Young's modulus
-    double val = log2 (E / origE) * 127;
+    double val = log2 (E / origE) * 255;
     g.setColour (Colour::fromRGBA (Global::limit (val, 0, 255), Global::limit (-abs (val), 0, 255), Global::limit (-val, 0, 255), 255));
     
     // Draw left boundary
@@ -241,13 +240,13 @@ void DynamicStiffString::calculateScheme()
                 + C0 * v[2][l] + C1 * (v[2][l + 1] + v[2][l - 1]);
     
     // inner boundary calculations
-    A0 = (Iterm - 2.0) * (Iterm - 2.0) + 2.0;
+    A0 = Iterm * Iterm - 4.0 * Iterm + 6.0;
     A1 = Iterm - 4.0;
     A2 = -(Iterm * Iterm) + 4.0 * Iterm + 1.0;
     A3 = -Iterm;
     AA = Iterm - 2.0;
     
-    if (numFromRightBound == 1)
+    if (Mw == 1)
     {
         // next-to-boundary point
         v[0][Mv-1] = (2.0 * v[1][Mv-1] - v[2][Mv-1]
@@ -302,7 +301,7 @@ void DynamicStiffString::calculateScheme()
                             + (S0 - AA * S1 - 1.0) * w[2][0]
                             - S1 * (w[2][1] + v[2][Mv] + A3 * v[2][Mv-1])) / (1.0 + S0);
         
-        if (numFromRightBound == 2)
+        if (Mw == 2)
         {
             // next-to-boundary point (right) + simply supported
             w[0][1] = (2.0 * w[1][1]
@@ -385,8 +384,8 @@ void DynamicStiffString::excite (int loc)
 
     for (int l = 0; l < width; ++l)
     {
-        // make sure we're not going out of bounds at the right boundary (this does 'cut off' the raised cosine)
-        if (l+start > (clamped ? N - 2 : N - 1))
+        // make sure we're not going out of bounds at the right boundary of the left system(this does 'cut off' the raised cosine)
+        if (l+start > Mv)
             break;
         
         v[1][l+start] += 0.5 * (1 - cos(2.0 * MathConstants<double>::pi * l / (width-1.0)));
@@ -399,7 +398,12 @@ void DynamicStiffString::excite (int loc)
 void DynamicStiffString::mouseDown (const MouseEvent& e)
 {
     // Get the excitation location as a ratio between the x-location of the mouse-click and the width of the app
-    excitationLoc = e.x / static_cast<double> (getWidth());
+    double startLoc = 0.5 * static_cast<double>(getWidth()) - 0.25 * static_cast<double>(getWidth()) * L / origL;
+    
+    excitationLoc = (e.x - startLoc) / (0.5 * static_cast<double>(getWidth()) * L / origL);
+    
+    if (excitationLoc < 0 || excitationLoc > 1)
+        return;
     
     // Activate the excitation flag to be used by the MainComponent to excite the string
     excitationFlag = true;
@@ -564,14 +568,14 @@ void DynamicStiffString::refreshCoefficients (bool init)
     // check if the change does not surpass a limit
     N = floor (Nfrac);
     alf = Nfrac - N;
-    if (Nprev == 0)
+    if (init)
         Nprev = N;
     
     // Check whether a grid point needs to be added or removed
     if (Nprev != N)
         addRemovePoint();
     
-    Mv = N - numFromRightBound;
+    Mv = N - Mw;
     
 #ifdef RECORD
     MvSave << Mv << ";\n";
@@ -611,7 +615,7 @@ void DynamicStiffString::addRemovePoint()
 {
     jassert (abs (N-Nprev) <= 1);
     refreshCustomIp();
-    if (N > NfracPrev)
+    if (N > Nprev)
     {
         // possibly unnecessary to update up[0]
         v[0][Mv + 1] = customIp[0] * v[0][Mv-1]
@@ -642,4 +646,12 @@ void DynamicStiffString::refreshCustomIp()
     customIp[1] = 2.0 * alf / (alf + 2.0);
     customIp[2] = 2.0 / (alf + 2.0);
     customIp[3] = -2.0 * alf / ((alf + 3.0) * (alf + 2.0));
+}
+
+bool DynamicStiffString::keyPressed (const KeyPress& key, Component *originatingComponent)
+{
+    if (key == KeyPress::spaceKey)
+        excitationFlag = true;
+    
+    return true;
 }
