@@ -17,6 +17,7 @@ namespace Global {
 #endif
     static int margin = 10;
     static double NmaxChange = 1.0 / 20.0;
+    static double sig1min = 0.0002;
     static float boundaryEllRad = 10.0;
     // limiter
     static double limit (double val, double min, double max)

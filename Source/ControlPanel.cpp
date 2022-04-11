@@ -76,7 +76,7 @@ void ControlPanel::refreshSliders (NamedValueSet& parameters)
             if (parameters.getName(i).toString() == "E" || parameters.getName(i).toString() == "sigma0")
                 newSlider->setRange (0, val * 2.0);
             else if (parameters.getName(i).toString() == "sigma1") // have a minimum value for sigma1 to prevent artefacts
-                newSlider->setRange (0.0002, val * 2.0);
+                newSlider->setRange (Global::sig1min, val * 2.0);
             else if (parameters.getName(i).toString() == "r") // have a minimum value for sigma1 to prevent artefacts
                 newSlider->setRange (val * 0.5, val * 2.0);
             else

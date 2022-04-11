@@ -135,7 +135,8 @@ void MainComponent::resized()
 
 void MainComponent::timerCallback()
 {
-    repaint(); // update the graphics X times a second
+    if (graphicsToggle)
+        repaint(); // update the graphics X times a second
 }
 
 void MainComponent::changeListenerCallback (ChangeBroadcaster* changeBroadcaster)
@@ -147,5 +148,10 @@ void MainComponent::changeListenerCallback (ChangeBroadcaster* changeBroadcaster
 bool MainComponent::keyPressed (const KeyPress& key, Component *originatingComponent)
 {
     dynamicStiffString->keyPressed (key, originatingComponent);
+    if (key == KeyPress ('g'))
+    {
+        graphicsToggle = !graphicsToggle;
+        dynamicStiffString->setAlpha (graphicsToggle ? 1 : 0.2);
+    }
     return true;
 }

@@ -49,8 +49,16 @@ DynamicStiffString::DynamicStiffString (NamedValueSet& parameters, double k) : k
     
     double cSqMin = 0.5 * T / (2.0 * rho * 2.0 * r * 2.0 * r * MathConstants<double>::pi);
 
-    double hMin = sqrt(cSqMin) * k;
+    double hMin = sqrt(cSqMin * k * k + 4.0 * Global::sig1min * k);
     Nmax = floor (2.0 * L / hMin);
+    
+    double rMax = 0.5 * r; //?
+    double cSqMax = 2.0 * T / (0.5 * rho * rMax * rMax * MathConstants<double>::pi);
+    double kappaSqMax = 2.0 * E * MathConstants<double>::pi *rMax * rMax * rMax * rMax * 0.25 / (0.5 * rho * rMax * rMax * MathConstants<double>::pi);
+    
+    double hMax = sqrt((cSqMax * k * k + 4.0 * sigma1 * 2.0 * k + sqrt(pow(cSqMax * k * k + 4.0 * sigma1 * 2.0 * k, 2) + 16 * kappaSqMax * k * k))/2.0);
+
+    double Nmin = floor (0.5 * L / hMax);
     
     // only add to left system (v)
     int MvMax = Nmax - Mw;
