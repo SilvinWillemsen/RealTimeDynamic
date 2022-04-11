@@ -126,7 +126,7 @@ void DynamicStiffString::paint (juce::Graphics& g)
 
     double val = 1.5 - (rho / origRho - 0.5);
     
-    int numDashPattern = 6;
+    const int numDashPattern = 6;
     float dashPattern[numDashPattern];
     dashPattern[0] = 10.0 - 5.0 * val;
     dashPattern[1] = 5.0 * val;
