@@ -73,10 +73,16 @@ void ControlPanel::refreshSliders (NamedValueSet& parameters)
         double val = *parameters.getVarPointerAt(i);
         if (val != 0)
         {
-            if (parameters.getName(i).toString() == "E" || parameters.getName(i).toString() == "sigma0")
+            if (parameters.getName(i).toString() == "sigma0")
                 newSlider->setRange (0, val * 2.0);
+            else if (parameters.getName(i).toString() == "E")
+                newSlider->setRange (1e9, 4e13);
+            else if (parameters.getName(i).toString() == "T")
+                newSlider->setRange (0, val * 2.0);
+            else if (parameters.getName(i).toString() == "L")
+                newSlider->setRange (0.1, val * 2.0);
             else if (parameters.getName(i).toString() == "sigma1") // have a minimum value for sigma1 to prevent artefacts
-                newSlider->setRange (Global::sig1min, val * 2.0);
+                newSlider->setRange (Global::sig1min, val * 10);
             else if (parameters.getName(i).toString() == "r") // have a minimum value for sigma1 to prevent artefacts
                 newSlider->setRange (val * 0.5, val * 2.0);
             else
